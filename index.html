@@ -3052,67 +3052,7 @@ function nuevoFormato() {
 // ════════════════════════════════════
 //  EXPORTAR EXCEL FORMATO 01 — ESTRUCTURA OFICIAL
 // ════════════════════════════════════
-
-// ════════════════════════════════════
-//  SYNC CARD DATA → HIDDEN ROWS (for PDF/Excel)
-// ════════════════════════════════════
-function syncCardsToRows() {
-  document.querySelectorAll('.pac-card').forEach(card => {
-    const rowId = card.dataset.id;
-    const tr1 = document.getElementById('pac-row-' + rowId);
-    if (!tr1) return;
-
-    const nombre   = card.querySelector('.inp-nombre')?.value || '';
-    const cmp      = card.querySelector('.inp-cmp')?.value || '';
-    const ini      = card.querySelector('.inp-ini')?.value || '';
-    const generoEl = card.querySelector('.sel-genero');
-    const genero   = generoEl ? (generoEl.options[generoEl.selectedIndex]?.text || '') : '';
-    const fnac     = card.querySelector('.inp-fnac')?.value || '';
-    const edad     = card.querySelector('.inp-edad')?.value || '';
-    const esquema  = card.querySelector('.inp-esquema')?.value || '';
-    const objEl    = card.querySelector('.sel-obj');
-    const objetivo = objEl ? (objEl.options[objEl.selectedIndex]?.text || '') : '';
-    const ciclos   = card.querySelector('.inp-ciclos')?.value || '';
-    const fini     = card.querySelector('.inp-fini')?.value || '';
-    const ffin     = card.querySelector('.inp-ffin')?.value || '';
-    const statEl   = card.querySelector('.sel-status');
-    const status   = statEl ? (statEl.options[statEl.selectedIndex]?.text || '') : '';
-
-    // Build hidden cells so PDF/Excel selectors can read them
-    tr1.innerHTML = `
-      <td class="td-num">${rowId}</td>
-      <td><input type="text" class="inp-nombre" value="${nombre.replace(/"/g,'&quot;')}" id="nombre-${rowId}"></td>
-      <td><input type="text" class="inp-cmp" value="${cmp.replace(/"/g,'&quot;')}"></td>
-      <td><input type="text" class="inp-ini" value="${ini.replace(/"/g,'&quot;')}"></td>
-      <td><select class="sel-genero"><option value="${genero}" selected>${genero}</option></select></td>
-      <td><input type="date" class="inp-fnac" value="${fnac}"></td>
-      <td><input type="text" id="edad-${rowId}" class="inp-edad" value="${edad}" readonly></td>
-      <td><input type="text" class="inp-esquema" value="${esquema.replace(/"/g,'&quot;')}"></td>
-      <td><select class="sel-obj"><option value="${objetivo}" selected>${objetivo}</option></select></td>
-      <td><input type="number" class="inp-ciclos" value="${ciclos}"></td>
-      <td><input type="date" class="inp-fini" value="${fini}"></td>
-      <td><input type="date" class="inp-ffin" value="${ffin}"></td>
-      <td><select class="sel-status"><option value="${status}" selected>${status}</option></select></td>
-      <td></td>
-    `;
-
-    // Sync month inputs
-    MESES.forEach(m => {
-      const cardInp = card.querySelector('.mes-input[data-mes="' + m + '"][data-row="' + rowId + '"]');
-      const hiddenInp = document.querySelector('.mes-input[data-mes="' + m + '"][data-row="' + rowId + '"]:not(.pac-meses-grid .mes-input)');
-      // Actually just update data on the card input itself — PDF reads by data-mes/data-row
-      // No action needed since mes-input already has the right data attributes
-    });
-
-    // Update nombre-label
-    const lbl = document.getElementById('nombre-label-' + rowId);
-    if (lbl) lbl.textContent = nombre || '—';
-  });
-}
-
 async function exportarExcelUnico() {
-  if (!validarCamposPacientes()) return;
-  syncCardsToRows(); // sync card UI → hidden rows
   // ── Colores del tema (tema7 = accent5 = #4BACC6) ──
   const COLOR_HEADER  = '4BACC6';  // azul principal
   const COLOR_ROW2A   = '4BACC6';  // subgrupos fila 2
@@ -3127,11 +3067,7 @@ async function exportarExcelUnico() {
   const selCancer  = document.getElementById('sel_cancer');
   const indDisplay = document.getElementById('indicacion_display');
   const docSpan    = document.getElementById('doc_texto');
-  const getOpt = sel => {
-    if (!sel) return '';
-    if (sel.tagName === 'SELECT') return sel.options[sel.selectedIndex]?.text || sel.value || '';
-    return sel.value || '';
-  };
+  const getOpt = sel => sel ? (sel.options[sel.selectedIndex]?.text || sel.value || '') : '';
   let enc_ipress = getOpt(selIpress), enc_trat = getOpt(selTrat),
       enc_ppff   = getOpt(selPpff),   enc_cancer = getOpt(selCancer);
   const indTxt   = indDisplay ? (indDisplay.textContent||'') : '';
@@ -3160,7 +3096,7 @@ async function exportarExcelUnico() {
   // ── Definir anchos de columna — ahora 34 cols (A..AH) ──
   // A    B      C(FECHA) D      E     F    G     H    I    J     K     L     M     N     O     P     Q     R     S     T     U     V-AG   AH
   const colWidths = [
-    6.8,  28,  12,  28.8,  12.8,  8.8,  8.8, 12, 14.8, 5.8, 8.8, 32.8, 14.8, 10.8, 12.8, 9,   19.4, 11.7, 14.7, 25.7, 17.7, 19.4,
+    6.8,  28,  12,  28.8,  12.8,  8.8,  8.8, 14.8, 5.8, 8.8, 32.8, 14.8, 10.8, 12.8, 9,   19.4, 11.7, 14.7, 25.7, 17.7, 19.4,
     5.8, 5.8, 5.8, 5.8, 5.8, 5.8, 5.8, 7.8, 11.2, 5.8, 5.8, 5.8, 7
   ];
   colWidths.forEach((w,i) => { ws.getColumn(i+1).width = w; });
@@ -3201,7 +3137,7 @@ async function exportarExcelUnico() {
   //  FILA 1 — TÍTULO PRINCIPAL (A1:AH1) — ahora 34 columnas
   // ══════════════════════════════════════
   ws.getRow(1).height = 20;
-  ws.mergeCells('A1:AI1');
+  ws.mergeCells('A1:AH1');
   const titleCell = ws.getCell('A1');
   titleCell.value = 'FORMATO N° 01 — SUSTENTO DE NECESIDAD Y MONITOREO';
   styleCell(titleCell, {
@@ -3209,7 +3145,7 @@ async function exportarExcelUnico() {
     bold: true, sz: 14, halign:'center', valign:'middle',
     border: 'all'
   });
-  for (let c=1; c<=35; c++) {
+  for (let c=1; c<=34; c++) {
     ws.getRow(1).getCell(c).border = allBorders;
   }
 
@@ -3225,10 +3161,10 @@ async function exportarExcelUnico() {
     ['A2','B2',   '',                                        COLOR_ROW2A],
     ['C2','C2',   'FECHA REGISTRO',                          COLOR_HDR3],
     ['D2','E2',   'DATOS DEL MEDICO',                        COLOR_HDR3],
-    ['F2','P2',   'DATOS DEL PACIENTE',                      COLOR_HDR3],
-    ['Q2','U2',   'PPFF NO PNUME / ETS — MEDICAMENTOS E INDICACIONES POR REGISTRO', COLOR_ROW2A],
-    ['V2','V2',   'DATOS PACIENTE',                          COLOR_ROW2A],
-    ['W2','AI2',  'PERIODO',                                 COLOR_ROW2A],
+    ['F2','O2',   'DATOS DEL PACIENTE',                      COLOR_HDR3],
+    ['P2','T2',   'PPFF NO PNUME / ETS — MEDICAMENTOS E INDICACIONES POR REGISTRO', COLOR_ROW2A],
+    ['U2','U2',   'DATOS PACIENTE',                          COLOR_ROW2A],
+    ['V2','AH2',  'PERIODO',                                 COLOR_ROW2A],
   ];
   subheaders.forEach(([from, to, text, bg]) => {
     ws.mergeCells(`${from}:${to}`);
@@ -3252,7 +3188,7 @@ async function exportarExcelUnico() {
   ws.getRow(3).height = 42;
   const headers3 = [
     'N°','IPRESS','FECHA','APELLIDOS Y NOMBRES','CMP / RNE','INICIALES PACIENTE',
-    'GÉNERO','FINANCIADOR','FECHA NACIMIENTO','EDAD',
+    'GÉNERO','FECHA NACIMIENTO','EDAD','SEGURO',
     'ESQUEMA TRATAMIENTO (DOSIS/FRECUENCIA)','OBJETIVO TERAPÉUTICO',
     'CICLOS / CURSOS SOLICITADOS','FECHA INICIO','FECHA FIN',
     'PPFF NO PNUME / ETS','COD. SISMED','TIPO DE CÁNCER',
@@ -3303,6 +3239,7 @@ async function exportarExcelUnico() {
     const genero   = gvs(tr.querySelector('select.sel-genero'));
     const fechaNac = gv(tr.querySelector('input.inp-fnac'));
     const edad     = tr.querySelector('input.inp-edad')?.value||'';
+    const seguro   = gvs(tr.querySelector('select.sel-seguro'));
     const esquema  = gv(tr.querySelector('input.inp-esquema'));
     const objetivo = gvs(tr.querySelector('select.sel-obj'));
     const ciclos   = gv(tr.querySelector('input.inp-ciclos'));
@@ -3325,7 +3262,7 @@ async function exportarExcelUnico() {
     const total   = totalEl ? (parseFloat(totalEl.textContent)||0) : 0;
 
     const rowData = [
-      idx+1, enc_ipress, pCard.fecha||_fechaStr, nombre, cmp, inic, genero, 'SIS', fechaNac, edad,
+      idx+1, enc_ipress, pCard.fecha||_fechaStr, nombre, cmp, inic, genero, fechaNac, edad, seguro,
       esquema, objetivo, ciclos, fIni, fFin,
       ppffVal, codVal, cancerV, docV, indV, status,
       ...mesesVals, total
@@ -3339,7 +3276,7 @@ async function exportarExcelUnico() {
     rowData.forEach((val, ci) => {
       const cell = dataRow.getCell(ci+1);
       cell.value = val;
-      const isNum = (ci >= 22 && ci <= 34);  // meses + total (cols 23-35, ci 0-indexed = 22-34)
+      const isNum = (ci >= 21 && ci <= 33);  // meses + total (cols 22-34, ci 0-indexed = 21-33)
       styleCell(cell, {
         bgColor: bgData, fontColor: '1F3864',
         sz: 10, halign: isNum ? 'center' : (ci===0?'center':'left'),
@@ -3352,26 +3289,23 @@ async function exportarExcelUnico() {
   // ══════════════════════════════════════
   //  FILA DE TOTALES
   // ══════════════════════════════════════
-  // Usar el mismo orden dinámico de meses que las columnas del Excel
-  const totVals = MESES_K.map(m => {
-    const inputs = document.querySelectorAll('.mes-input[data-mes="' + m + '"]');
-    let s = 0;
-    inputs.forEach(inp => { s += parseFloat(inp.value) || 0; });
-    return s;
+  const totVals   = totCellIds.map(id => {
+    const el = document.getElementById(id);
+    return el ? (parseFloat(el.textContent)||0) : 0;
   });
   const grandTotal = document.getElementById('tot-total');
   const gTot = grandTotal ? (parseFloat(grandTotal.textContent)||0) : 0;
 
   const totRow = ws.getRow(dataRowNum);
   totRow.height = 18;
-  // rowData layout: 21 cols de datos + 12 meses (22-33) + 1 total (34) = 34 cols
-  // Col 21 = STATUS → fila total: "TOTAL UNIDADES POR MES →"
-  // Cols 22-33 = valores de meses (en el mismo orden dinámico de MESES_K)
-  // Col 34 = GRAN TOTAL
+  // Con columna FECHA insertada: ahora 34 cols totales
+  // Col 21 = STATUS DEL PACIENTE → "TOTAL UNIDADES"
+  // Cols 22-33 = meses ENE-DIC
+  // Col 34 = TOTAL
   for (let c=1; c<=34; c++) {
     const cell = totRow.getCell(c);
     if (c === 21) {
-      cell.value = 'TOTAL UNIDADES →';
+      cell.value = 'TOTAL UNIDADES';
     } else if (c >= 22 && c <= 33) {
       cell.value = totVals[c-22];
     } else if (c === 34) {
@@ -3381,7 +3315,7 @@ async function exportarExcelUnico() {
     }
     styleCell(cell, {
       bgColor: COLOR_HDR3, fontColor: COLOR_WHITE,
-      bold: true, sz: 10, halign: c === 21 ? 'right' : 'center', valign:'middle',
+      bold: true, sz: 10, halign:'center', valign:'middle',
       border:'all'
     });
   }
@@ -3399,6 +3333,7 @@ async function exportarExcelUnico() {
   URL.revokeObjectURL(url);
   mostrarNotif('📥 Excel Formato 01 exportado con estructura oficial.', 'success');
 }
+
 // ════════════════════════════════════
 //  EXPORTAR PARA FORMATO 02 (Excel puente)
 // ════════════════════════════════════
