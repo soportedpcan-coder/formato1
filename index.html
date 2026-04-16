@@ -3136,8 +3136,8 @@ async function exportarExcelUnico() {
   // ══════════════════════════════════════
   //  FILA 1 — TÍTULO PRINCIPAL (A1:AH1) — ahora 34 columnas
   // ══════════════════════════════════════
-  ws.getRow(1).height = 20;
-  ws.mergeCells('A1:AH1');
+ ws.getRow(1).height = 20;
+  ws.mergeCells('A1:AI1');
   const titleCell = ws.getCell('A1');
   titleCell.value = 'FORMATO N° 01 — SUSTENTO DE NECESIDAD Y MONITOREO';
   styleCell(titleCell, {
@@ -3161,10 +3161,10 @@ async function exportarExcelUnico() {
     ['A2','B2',   '',                                        COLOR_ROW2A],
     ['C2','C2',   'FECHA REGISTRO',                          COLOR_HDR3],
     ['D2','E2',   'DATOS DEL MEDICO',                        COLOR_HDR3],
-    ['F2','O2',   'DATOS DEL PACIENTE',                      COLOR_HDR3],
-    ['P2','T2',   'PPFF NO PNUME / ETS — MEDICAMENTOS E INDICACIONES POR REGISTRO', COLOR_ROW2A],
-    ['U2','U2',   'DATOS PACIENTE',                          COLOR_ROW2A],
-    ['V2','AH2',  'PERIODO',                                 COLOR_ROW2A],
+    ['F2','P2',   'DATOS DEL PACIENTE',                      COLOR_HDR3],
+    ['Q2','U2',   'PPFF NO PNUME / ETS — MEDICAMENTOS E INDICACIONES POR REGISTRO', COLOR_ROW2A],
+    ['V2','V2',   'DATOS PACIENTE',                          COLOR_ROW2A],
+    ['W2','AI2',  'PERIODO',                                 COLOR_ROW2A],
   ];
   subheaders.forEach(([from, to, text, bg]) => {
     ws.mergeCells(`${from}:${to}`);
@@ -3185,7 +3185,7 @@ async function exportarExcelUnico() {
   // ══════════════════════════════════════
   //  FILA 3 — CABECERA DE COLUMNAS
   // ══════════════════════════════════════
-  ws.getRow(3).height = 42;
+   ws.getRow(3).height = 42;
   const headers3 = [
     'N°','IPRESS','FECHA','APELLIDOS Y NOMBRES','CMP / RNE','INICIALES PACIENTE',
     'GÉNERO','FECHA NACIMIENTO','EDAD','SEGURO',
@@ -3262,7 +3262,7 @@ async function exportarExcelUnico() {
     const total   = totalEl ? (parseFloat(totalEl.textContent)||0) : 0;
 
     const rowData = [
-      idx+1, enc_ipress, pCard.fecha||_fechaStr, nombre, cmp, inic, genero, fechaNac, edad, seguro,
+      idx+1, enc_ipress, pCard.fecha||_fechaStr, nombre, cmp, inic, genero, fechaNac, edad, 'SIS',
       esquema, objetivo, ciclos, fIni, fFin,
       ppffVal, codVal, cancerV, docV, indV, status,
       ...mesesVals, total
@@ -3276,7 +3276,7 @@ async function exportarExcelUnico() {
     rowData.forEach((val, ci) => {
       const cell = dataRow.getCell(ci+1);
       cell.value = val;
-      const isNum = (ci >= 21 && ci <= 33);  // meses + total (cols 22-34, ci 0-indexed = 21-33)
+      const isNum = (ci >= 21 && ci <= 33);  // meses + total (cols 23-35, ci 0-indexed = 22-34)
       styleCell(cell, {
         bgColor: bgData, fontColor: '1F3864',
         sz: 10, halign: isNum ? 'center' : (ci===0?'center':'left'),
@@ -3289,23 +3289,26 @@ async function exportarExcelUnico() {
   // ══════════════════════════════════════
   //  FILA DE TOTALES
   // ══════════════════════════════════════
-  const totVals   = totCellIds.map(id => {
-    const el = document.getElementById(id);
-    return el ? (parseFloat(el.textContent)||0) : 0;
+  // Usar el mismo orden dinámico de meses que las columnas del Excel
+  const totVals = MESES_K.map(m => {
+    const inputs = document.querySelectorAll('.mes-input[data-mes="' + m + '"]');
+    let s = 0;
+    inputs.forEach(inp => { s += parseFloat(inp.value) || 0; });
+    return s;
   });
   const grandTotal = document.getElementById('tot-total');
   const gTot = grandTotal ? (parseFloat(grandTotal.textContent)||0) : 0;
 
   const totRow = ws.getRow(dataRowNum);
   totRow.height = 18;
-  // Con columna FECHA insertada: ahora 34 cols totales
-  // Col 21 = STATUS DEL PACIENTE → "TOTAL UNIDADES"
-  // Cols 22-33 = meses ENE-DIC
-  // Col 34 = TOTAL
+  // rowData layout: 21 cols de datos + 12 meses (22-33) + 1 total (34) = 34 cols
+  // Col 21 = STATUS → fila total: "TOTAL UNIDADES POR MES →"
+  // Cols 22-33 = valores de meses (en el mismo orden dinámico de MESES_K)
+  // Col 34 = GRAN TOTAL
   for (let c=1; c<=34; c++) {
     const cell = totRow.getCell(c);
     if (c === 21) {
-      cell.value = 'TOTAL UNIDADES';
+      cell.value = 'TOTAL UNIDADES →';
     } else if (c >= 22 && c <= 33) {
       cell.value = totVals[c-22];
     } else if (c === 34) {
@@ -3315,12 +3318,12 @@ async function exportarExcelUnico() {
     }
     styleCell(cell, {
       bgColor: COLOR_HDR3, fontColor: COLOR_WHITE,
-      bold: true, sz: 10, halign:'center', valign:'middle',
+      bold: true, sz: 10, halign: c === 21 ? 'right' : 'center', valign:'middle',
       border:'all'
     });
   }
 
-// ══════════════════════════════════════
+  // ══════════════════════════════════════
   //  DESCARGAR
   // ══════════════════════════════════════
   const buffer = await wb.xlsx.writeBuffer();
