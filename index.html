@@ -3201,7 +3201,7 @@ async function exportarExcelUnico() {
   //  FILA 1 — TÍTULO PRINCIPAL (A1:AH1) — ahora 34 columnas
   // ══════════════════════════════════════
   ws.getRow(1).height = 20;
-  ws.mergeCells('A1:AI1');
+  ws.mergeCells('A1:AH1');
   const titleCell = ws.getCell('A1');
   titleCell.value = 'FORMATO N° 01 — SUSTENTO DE NECESIDAD Y MONITOREO';
   styleCell(titleCell, {
@@ -3209,7 +3209,7 @@ async function exportarExcelUnico() {
     bold: true, sz: 14, halign:'center', valign:'middle',
     border: 'all'
   });
-  for (let c=1; c<=35; c++) {
+  for (let c=1; c<=34; c++) {
     ws.getRow(1).getCell(c).border = allBorders;
   }
 
@@ -3226,9 +3226,9 @@ async function exportarExcelUnico() {
     ['C2','C2',   'FECHA REGISTRO',                          COLOR_HDR3],
     ['D2','E2',   'DATOS DEL MEDICO',                        COLOR_HDR3],
     ['F2','P2',   'DATOS DEL PACIENTE',                      COLOR_HDR3],
-    ['Q2','U2',   'PPFF NO PNUME / ETS — MEDICAMENTOS E INDICACIONES POR REGISTRO', COLOR_ROW2A],
-    ['V2','V2',   'DATOS PACIENTE',                          COLOR_ROW2A],
-    ['W2','AI2',  'PERIODO',                                 COLOR_ROW2A],
+    ['Q2','T2',   'PPFF NO PNUME / ETS — MEDICAMENTOS E INDICACIONES POR REGISTRO', COLOR_ROW2A],
+    ['U2','U2',   'DATOS PACIENTE',                          COLOR_ROW2A],
+    ['V2','AH2',  'PERIODO',                                 COLOR_ROW2A],
   ];
   subheaders.forEach(([from, to, text, bg]) => {
     ws.mergeCells(`${from}:${to}`);
@@ -4949,11 +4949,11 @@ function exportarPdfPorMedicamento() {
   </div>
   <div class="pdf-header">
     <div class="pdf-header-logo">
-      <img src="${logoSrc}" alt="Header" style="height:54px;width:auto;display:block;">
+      <img src="https://yt3.googleusercontent.com/dSnqcXzoOXSJp35-I_9lPnUTa3M9qOuck07IS_UlvCz3lmBRQ8uohBfqb5GRzeOAdZjWKmeD=s900-c-k-c0x00ffffff-no-rj" alt="Header" style="height:54px;width:auto;display:block;">
     </div>
     <div class="pdf-titulo-box">
       <div class="pdf-titulo">FORMATO N° 01 – SUSTENTO DE NECESIDAD Y MONITOREO</div>
-      <div style="font-size:9px;color:#7a0c1e;font-weight:bold;text-align:center;margin-top:3px;">AGRUPADO POR CONDICIÓN DE USO</div>
+      <div style="font-size:9px;color:#7a0c1e;font-weight:bold;text-align:center;margin-top:3px;"></div>
     </div>
   </div>
   <div class="pdf-info-grid">
