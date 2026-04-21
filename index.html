@@ -3423,7 +3423,7 @@ function exportarParaFormato02() {
   const MESES_HDR = ['ENE','FEB','MAR','ABR','MAY','JUN','JUL','AGO','SEP','OCT','NOV','DIC'];
 
   // ── Fila de metadatos (para que F2 la detecte) ──
-  const metaRow = ['__FORMATO_F2_BRIDGE_V1__', ipress,
+  const metaRow = ['__FORMATO_F2_BRIDGE_V1__',
     new Date().toISOString(), '', '', '', '', '',
     ...Array(12).fill(''), ''];
 
@@ -3464,7 +3464,7 @@ function exportarParaFormato02() {
   });
 
   // Fila totales por mes
-  const totHdr = ['', '',  'TOTAL UNIDADES POR MES', '', '', '', ''];
+  const totHdr = ['',  'TOTAL UNIDADES POR MES', '', '', '', '', ''];
   const totVals = MESES_EXP.map((m, i) => {
     const el = document.getElementById('tot-' + m);
     return el ? (parseFloat(el.textContent) || 0) : 0;
@@ -3476,7 +3476,7 @@ function exportarParaFormato02() {
   const wb = XLSX.utils.book_new();
   const ws = XLSX.utils.aoa_to_sheet(rows);
   ws['!cols'] = [
-    {wch:4},{wch:40},{wch:14},{wch:22},{wch:50},{wch:30},{wch:45},
+    {wch:4},{wch:56},{wch:50},{wch:22},{wch:22},{wch:40},{wch:45},
     {wch:5},{wch:5},{wch:5},{wch:5},{wch:5},{wch:5},
     {wch:5},{wch:5},{wch:5},{wch:5},{wch:5},{wch:5},{wch:7}
   ];
