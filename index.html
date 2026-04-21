@@ -3429,7 +3429,7 @@ function exportarParaFormato02() {
 
   // ── Cabecera ──
   const header = [
-    'N°', 'PPFF NO PNUME / ETS', 'COD. SISMED',
+    'N°','Nombre Ipress', 'PPFF NO PNUME / ETS', 'COD. SISMED',
     'TIPO DE CÁNCER', 'INDICACIÓN DE USO',  //'DOCUMENTO DE REFERENCIA',
     'APELLIDOS Y NOMBRES DEL PACIENTE',
     ...MESES_HDR, 'TOTAL'
@@ -3450,6 +3450,7 @@ function exportarParaFormato02() {
     const total = mesesVals.reduce((s, v) => s + v, 0);
 
     rows.push([
+      pac.ipress,
       pac.pacNum,
       pac.ppff    || '',
       pac.cod     || '',
@@ -3463,7 +3464,7 @@ function exportarParaFormato02() {
   });
 
   // Fila totales por mes
-  const totHdr = ['', 'TOTAL UNIDADES POR MES', '', '', '', ''];
+  const totHdr = ['', '',  'TOTAL UNIDADES POR MES', '', '', '', ''];
   const totVals = MESES_EXP.map((m, i) => {
     const el = document.getElementById('tot-' + m);
     return el ? (parseFloat(el.textContent) || 0) : 0;
@@ -3475,7 +3476,7 @@ function exportarParaFormato02() {
   const wb = XLSX.utils.book_new();
   const ws = XLSX.utils.aoa_to_sheet(rows);
   ws['!cols'] = [
-    {wch:4},{wch:40},{wch:14},{wch:22},{wch:50},{wch:30},{wch:32},
+    {wch:4},{wch:40},{wch:14},{wch:22},{wch:50},{wch:30},{wch:45},
     {wch:5},{wch:5},{wch:5},{wch:5},{wch:5},{wch:5},
     {wch:5},{wch:5},{wch:5},{wch:5},{wch:5},{wch:5},{wch:7}
   ];
