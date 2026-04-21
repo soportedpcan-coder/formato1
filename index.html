@@ -3429,7 +3429,7 @@ function exportarParaFormato02() {
 
   // ── Cabecera ──
   const header = [
-    'N°','Nombre Ipress', 'PPFF NO PNUME / ETS', 'COD. SISMED',
+    'N°','NOMBRE IPRESS', 'PPFF NO PNUME / ETS', 'COD. SISMED',
     'TIPO DE CÁNCER', 'INDICACIÓN DE USO',  //'DOCUMENTO DE REFERENCIA',
     'APELLIDOS Y NOMBRES DEL PACIENTE',
     ...MESES_HDR, 'TOTAL'
@@ -3450,8 +3450,8 @@ function exportarParaFormato02() {
     const total = mesesVals.reduce((s, v) => s + v, 0);
 
     rows.push([
-      pac.ipress,
       pac.pacNum,
+      ipress,
       pac.ppff    || '',
       pac.cod     || '',
       pac.cancer  || '',
