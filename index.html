@@ -3430,7 +3430,7 @@ function exportarParaFormato02() {
   // ── Cabecera ──
   const header = [
     'N°', 'PPFF NO PNUME / ETS', 'COD. SISMED',
-    'TIPO DE CÁNCER', 'INDICACIÓN DE USO', 'DOCUMENTO DE REFERENCIA',
+    'TIPO DE CÁNCER', 'INDICACIÓN DE USO',  //'DOCUMENTO DE REFERENCIA',
     'APELLIDOS Y NOMBRES DEL PACIENTE',
     ...MESES_HDR, 'TOTAL'
   ];
@@ -3455,7 +3455,7 @@ function exportarParaFormato02() {
       pac.cod     || '',
       pac.cancer  || '',
       pac.indicacion || '',
-      pac.documento  || '',
+      // pac.documento  || '',
       nombre,
       ...mesesVals,
       total
