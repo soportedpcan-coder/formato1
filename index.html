@@ -3405,123 +3405,128 @@ async function exportarExcelUnico() {
 // ════════════════════════════════════
 //  EXPORTAR PARA FORMATO 02 (Excel puente) — conforme PROPUESTA_FORMATO_2
 // ════════════════════════════════════
-function exportarParaFormato02() {
+async function exportarParaFormato02() {
   syncCardsToRows();
 
   const ipress = (() => {
     const sel = document.getElementById('sel_ipress');
     return sel ? (sel.value || '') : '';
   })();
-  if (!ipress) {
-    mostrarNotif('⚠️ Seleccione la IPRESS antes de exportar.', 'error');
-    return;
-  }
+  if (!ipress) { mostrarNotif('⚠️ Seleccione la IPRESS antes de exportar.', 'error'); return; }
 
   const ppff = (typeof ppffPorPaciente !== 'undefined') ? ppffPorPaciente : [];
-  if (!ppff.length) {
-    mostrarNotif('⚠️ Agregue al menos un paciente antes de exportar para el Formato 02.', 'error');
-    return;
-  }
+  if (!ppff.length) { mostrarNotif('⚠️ Agregue al menos un paciente.', 'error'); return; }
 
   const MESES_EXP = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
   const MESES_HDR = ['ENE','FEB','MAR','ABR','MAY','JUN','JUL','AGO','SEP','OCT','NOV','DIC'];
 
-  // ── Fila de metadatos (fila 1, merged A1:U1 en el formato propuesto) ──
-  const metaRow = ['__FORMATO_F2_BRIDGE_V1__',
-    '', '', '', '', '', '', '',
-    ...Array(12).fill(''), ''];
+  // ── Colores del formato propuesto ──
+  const PURPLE = 'FF8064A2';  // theme accent4
+  const WHITE  = 'FFFFFFFF';
+  const BLACK  = 'FF000000';
 
-  // ── Cabecera (fila 2) — orden según PROPUESTA_FORMATO_2 ──
-  const header = [
-    'N°',
-    'FECHA Y HORA',          // ← columna B (nueva)
-    'NOMBRE IPRESS',         // ← columna C (antes B)
-    'PPFF NO PNUME / ETS',   // ← columna D (antes C)
-    'COD. SISMED',           // ← columna E (antes D)
-    'TIPO DE CÁNCER',        // ← columna F (antes E)
-    'INDICACIÓN DE USO',     // ← columna G (antes F)
-    'APELLIDOS Y NOMBRES DEL PACIENTE', // ← columna H (antes G)
-    ...MESES_HDR,
-    'TOTAL'
+  const fillPurple = { type: 'pattern', pattern: 'solid', fgColor: { argb: PURPLE } };
+
+  const fontWhiteBold16 = { name: 'Calibri', size: 16, bold: true, color: { argb: WHITE } };
+  const fontBlack12     = { name: 'Calibri', size: 12, color: { argb: BLACK } };
+  const fontWhite12     = { name: 'Calibri', size: 12, color: { argb: WHITE } };
+  const fontDark12      = { name: 'Calibri', size: 12 };
+
+  const alignCenter = { horizontal: 'center', vertical: 'middle' };
+
+  const wb = new ExcelJS.Workbook();
+  const ws = wb.addWorksheet('DATOS_FORMATO_02');
+
+  // ── Anchos de columna ──
+  ws.columns = [
+    { width: 4  }, { width: 22 }, { width: 56 }, { width: 50 },
+    { width: 22 }, { width: 22 }, { width: 40 }, { width: 45 },
+    { width: 5  }, { width: 5  }, { width: 5  }, { width: 5  },
+    { width: 5  }, { width: 5  }, { width: 5  }, { width: 5  },
+    { width: 5  }, { width: 5  }, { width: 5  }, { width: 5  }, { width: 7 }
   ];
 
-  const now = new Date(); // timestamp único para toda la exportación
-  const rows = [metaRow, header];
+  // ── Fila 1: metadato ──
+  const row1 = ws.addRow(['__FORMATO_F2_BRIDGE_V1__',
+    ...Array(20).fill('')]);
+  ws.mergeCells('A1:U1');
+  row1.height = 21;
+  row1.getCell(1).value = '__FORMATO_F2_BRIDGE_V1__';
+  row1.getCell(1).fill  = fillPurple;
+  row1.getCell(1).font  = fontWhiteBold16;
+  row1.getCell(1).alignment = alignCenter;
 
+  // ── Fila 2: cabecera ──
+  const headers = [
+    'N°', 'FECHA Y HORA', 'NOMBRE IPRESS',
+    'PPFF NO PNUME / ETS', 'COD. SISMED',
+    'TIPO DE CÁNCER', 'INDICACIÓN DE USO',
+    'APELLIDOS Y NOMBRES DEL PACIENTE',
+    ...MESES_HDR, 'TOTAL'
+  ];
+  const row2 = ws.addRow(headers);
+  row2.eachCell(cell => {
+    cell.fill = fillPurple;
+    cell.font = fontBlack12;
+    cell.alignment = { horizontal: 'center' };
+  });
+
+  // ── Filas de datos ──
+  const now = new Date();
   ppff.forEach(pac => {
     const nombreInp = document.getElementById('nombre-' + pac.pacNum);
     const nombre = nombreInp ? nombreInp.value.trim() : '';
-
     const mesesVals = MESES_EXP.map(m => {
       const inp = document.querySelector(
         '.mes-input[data-mes="' + m + '"][data-row="' + pac.pacNum + '"]'
       );
       return inp ? (parseFloat(inp.value) || 0) : 0;
     });
-
     const total = mesesVals.reduce((s, v) => s + v, 0);
 
-    rows.push([
-      pac.pacNum,
-      now,               // ← FECHA Y HORA (objeto Date → Excel formatea como fecha/hora)
-      ipress,            // ← NOMBRE IPRESS
-      pac.ppff    || '',
-      pac.cod     || '',
-      pac.cancer  || '',
-      pac.indicacion || '',
-      nombre,
-      ...mesesVals,
-      total
+    const dataRow = ws.addRow([
+      pac.pacNum, now, ipress,
+      pac.ppff || '', pac.cod || '',
+      pac.cancer || '', pac.indicacion || '',
+      nombre, ...mesesVals, total
     ]);
+    dataRow.eachCell(cell => { cell.font = fontDark12; });
+    // Formato fecha en col B
+    const dateCell = dataRow.getCell(2);
+    dateCell.numFmt = 'DD/MM/YYYY HH:MM:SS';
+    dateCell.alignment = { horizontal: 'center' };
   });
 
-  // ── Fila totales por mes ──
+  // ── Fila totales (fondo morado, texto blanco) ──
   const totVals = MESES_EXP.map(m => {
     const el = document.getElementById('tot-' + m);
     return el ? (parseFloat(el.textContent) || 0) : 0;
   });
   const grandTot = document.getElementById('tot-total');
-  rows.push([
+  const totRow = ws.addRow([
     '', '', 'TOTAL UNIDADES POR MES', '', '', '', '', '',
     ...totVals,
     grandTot ? (parseFloat(grandTot.textContent) || 0) : 0
   ]);
+  totRow.eachCell(cell => {
+    cell.fill = fillPurple;
+    cell.font = fontWhite12;
+  });
 
-  // ── Construir workbook ──
-  const wb = XLSX.utils.book_new();
-  const ws = XLSX.utils.aoa_to_sheet(rows);
-
-  // Formato de fecha/hora en columna B (índice 1) para filas de datos
-  const dateStyle = { numFmt: 'DD/MM/YYYY HH:MM:SS' };
-  const firstDataRow = 3; // fila 1=meta, fila 2=header, filas 3+ = datos
-  for (let r = firstDataRow; r < firstDataRow + ppff.length; r++) {
-    const cellRef = XLSX.utils.encode_cell({ r: r - 1, c: 1 }); // 0-indexed
-    if (ws[cellRef]) ws[cellRef].z = 'DD/MM/YYYY HH:MM:SS';
-  }
-
-  ws['!cols'] = [
-    {wch:4},  // N°
-    {wch:22}, // FECHA Y HORA
-    {wch:56}, // NOMBRE IPRESS
-    {wch:50}, // PPFF
-    {wch:22}, // COD. SISMED
-    {wch:22}, // TIPO CÁNCER
-    {wch:40}, // INDICACIÓN
-    {wch:45}, // PACIENTE
-    {wch:5},{wch:5},{wch:5},{wch:5},{wch:5},{wch:5},
-    {wch:5},{wch:5},{wch:5},{wch:5},{wch:5},{wch:5},{wch:7}
-  ];
-
-  // Merge A1:U1 para la fila de metadatos (igual que el formato propuesto)
-  ws['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 20 } }];
-
-  XLSX.utils.book_append_sheet(wb, ws, 'DATOS_FORMATO_02');
-
+  // ── Descargar ──
   const fecha = new Date().toISOString().slice(0, 10);
-  XLSX.writeFile(wb, 'ParaFormato02_' + fecha + '.xlsx');
-  mostrarNotif('✅ Archivo exportado para Formato 02: ParaFormato02_' + fecha + '.xlsx', 'ok');
-}
+  const buffer = await wb.xlsx.writeBuffer();
+  const blob = new Blob([buffer],
+    { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'ParaFormato02_' + fecha + '.xlsx';
+  a.click();
+  URL.revokeObjectURL(url);
 
+  mostrarNotif('✅ Exportado con formato: ParaFormato02_' + fecha + '.xlsx', 'ok');
+}
 // ════════════════════════════════════
 //  NOTIFICACIÓN
 // ════════════════════════════════════
