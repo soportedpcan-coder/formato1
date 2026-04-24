@@ -3379,6 +3379,24 @@ async function exportarExcelUnico() {
     enc_cancer=r.cancer; enc_ind=r.indicacion;   enc_doc=r.documento;
   }
 
+  // ── Separar CÓDIGO RENIPRES y NOMBRE IPRESS desde el valor combinado "COD — NOMBRE" ──
+  // seleccionarIpress() guarda en sel_ipress.value la cadena "CÓDIGO — NOMBRE"
+  let enc_cod_ipress = '', enc_nombre_ipress = enc_ipress;
+  if (enc_ipress && enc_ipress.includes(' — ')) {
+    const _partes = enc_ipress.split(' — ');
+    enc_cod_ipress    = _partes[0].trim();
+    enc_nombre_ipress = _partes.slice(1).join(' — ').trim();
+  } else if (enc_ipress) {
+    // Fallback: buscar en DATA_IPRESS por nombre o código
+    const _encontrado = (typeof DATA_IPRESS !== 'undefined')
+      ? DATA_IPRESS.find(ip => ip.NOMBRE === enc_ipress || ip.COD === enc_ipress)
+      : null;
+    if (_encontrado) {
+      enc_cod_ipress    = _encontrado.COD;
+      enc_nombre_ipress = _encontrado.NOMBRE;
+    }
+  }
+
   const _hoy     = new Date();
   const _fechaStr= String(_hoy.getDate()).padStart(2,'0')+'/'+String(_hoy.getMonth()+1).padStart(2,'0')+'/'+_hoy.getFullYear();
   const fechaFile= _hoy.toISOString().slice(0,10);
@@ -3395,9 +3413,15 @@ async function exportarExcelUnico() {
 
   // ── Definir anchos de columna — ahora 34 cols (A..AH) ──
   // A    B      C(FECHA) D      E     F    G     H    I    J     K     L     M     N     O     P     Q     R     S     T     U     V-AG   AH
+  // 35 columnas: N°, COD RENIPRES, NOMBRE IPRESS, FECHA, APELLIDOS MÉDICO, CMP,
+  //   INICIALES, GÉNERO, FINANCIADOR, FEC NAC, EDAD, ESQUEMA, OBJETIVO, CICLOS,
+  //   F.INICIO, F.FIN, PPFF, COD SISMED, CÁNCER, DOCUMENTO, INDICACIÓN, STATUS,
+  //   ENE-DIC (12), TOTAL
   const colWidths = [
- 6.8,  11.9,  37, 11,  32.8,  10.8,  8.8, 24, 17  , 14 , 8  , 32  , 23  , 20  , 12  , 12,    27, 10  , 22  , 35   , 17 , 17,
-    5.8, 5.8, 5.8, 5.8, 5.8, 5.8, 5.8, 5.8, 5.8, 5.8, 5.8, 5.8
+    6.8,  10,   37,   11,   32,  10,  8,   10,  10,  14,  8,   32,  23,  10,  12,  12,
+    30,   10,   20,   35,   70,  18,
+    5.8, 5.8, 5.8, 5.8, 5.8, 5.8, 5.8, 5.8, 5.8, 5.8, 5.8, 5.8,
+    7
   ];
   colWidths.forEach((w,i) => { ws.getColumn(i+1).width = w; });
 
@@ -3445,7 +3469,7 @@ async function exportarExcelUnico() {
     bold: true, sz: 14, halign:'center', valign:'middle',
     border: 'all'
   });
-  for (let c=1; c<=34; c++) {
+  for (let c=1; c<=35; c++) {
     ws.getRow(1).getCell(c).border = allBorders;
   }
 
@@ -3458,13 +3482,13 @@ async function exportarExcelUnico() {
   ws.getRow(2).height = 33;
 
   const subheaders = [
-    ['A2','C2',   'DATOS IPRES',                             COLOR_HDR3],
-    ['D2','D2',   'FECHA REGISTRO',                          COLOR_HDR3],
-    ['E2','F2',   'DATOS DEL MEDICO',                        COLOR_HDR3],
-    ['G2','Q2',   'DATOS DEL PACIENTE',                      COLOR_HDR3],
-    ['R2','U2',   'PPFF NO PNUME / ETS — MEDICAMENTOS E INDICACIONES POR REGISTRO', COLOR_ROW2A],
-    ['V2','V2',   'DATOS PACIENTE',                          COLOR_ROW2A],
-    ['W2','AI2',  'PERIODO',                                 COLOR_ROW2A],
+    ['A2','C2',   'DATOS IPRES',                                                      COLOR_HDR3],
+    ['D2','D2',   'FECHA REGISTRO',                                                   COLOR_HDR3],
+    ['E2','F2',   'DATOS DEL MEDICO',                                                 COLOR_HDR3],
+    ['G2','P2',   'DATOS DEL PACIENTE',                                               COLOR_HDR3],
+    ['Q2','U2',   'PPFF NO PNUME / ETS — MEDICAMENTOS E INDICACIONES POR REGISTRO',  COLOR_ROW2A],
+    ['V2','V2',   'STATUS PACIENTE',                                                  COLOR_ROW2A],
+    ['W2','AI2',  'PERIODO',                                                          COLOR_ROW2A],
   ];
   subheaders.forEach(([from, to, text, bg]) => {
     ws.mergeCells(`${from}:${to}`);
@@ -3485,7 +3509,6 @@ async function exportarExcelUnico() {
   // ══════════════════════════════════════
   //  FILA 3 — CABECERA DE COLUMNAS
   // ══════════════════════════════════════
-  
   ws.getRow(3).height = 45;
   const headers3 = [
     'N°','CODIGO RENIPRES',' NOMBRE IPRESS','FECHA','APELLIDOS Y NOMBRES','CMP / RNE','INICIALES PACIENTE',
@@ -3565,18 +3588,44 @@ async function exportarExcelUnico() {
     const totalEl = document.getElementById('row-total-'+rowId);
     const total   = totalEl ? (parseFloat(totalEl.textContent)||0) : 0;
 
+    // ── Mapeo exacto header→dato (35 columnas) ──
+    // 1:N°  2:COD RENIPRES  3:NOMBRE IPRESS  4:FECHA  5:APELLIDOS MÉDICO  6:CMP
+    // 7:INICIALES  8:GÉNERO  9:FINANCIADOR  10:FEC NAC  11:EDAD  12:ESQUEMA
+    // 13:OBJETIVO  14:CICLOS  15:F.INICIO  16:F.FIN
+    // 17:PPFF  18:COD SISMED  19:CÁNCER  20:DOCUMENTO  21:INDICACIÓN  22:STATUS
+    // 23-34:ENE…DIC  35:TOTAL
     const rowData = [
-      idx+1, enc_ipress, pCard.fecha||_fechaStr, nombre, cmp, inic, genero, 'SIS', fechaNac, edad,
-      esquema, objetivo, ciclos, fIni, fFin,
-      ppffVal, codVal, cancerV, docV, indV, status,
-      ...mesesVals, total
+      idx+1,              // 1  N°
+      enc_cod_ipress,     // 2  CODIGO RENIPRES
+      enc_nombre_ipress,  // 3  NOMBRE IPRESS
+      pCard.fecha||_fechaStr, // 4  FECHA REGISTRO
+      nombre,             // 5  APELLIDOS Y NOMBRES MÉDICO
+      cmp,                // 6  CMP / RNE
+      inic,               // 7  INICIALES PACIENTE
+      genero,             // 8  GÉNERO
+      'SIS',              // 9  FINANCIADOR
+      fechaNac,           // 10 FECHA NACIMIENTO
+      edad,               // 11 EDAD
+      esquema,            // 12 ESQUEMA TRATAMIENTO (DOSIS/FRECUENCIA)
+      objetivo,           // 13 OBJETIVO TERAPÉUTICO
+      ciclos,             // 14 CICLOS / CURSOS SOLICITADOS
+      fIni,               // 15 FECHA INICIO
+      fFin,               // 16 FECHA FIN
+      ppffVal,            // 17 PPFF NO PNUME / ETS
+      codVal,             // 18 COD. SISMED
+      cancerV,            // 19 TIPO DE CÁNCER
+      docV,               // 20 DOCUMENTO DE REFERENCIA
+      indV,               // 21 INDICACIÓN DE USO
+      status,             // 22 STATUS DEL PACIENTE
+      ...mesesVals,       // 23-34 ENE…DIC
+      total               // 35 TOTAL
     ];
 
     const isAlt = idx % 2 === 1;
     const bgData = isAlt ? 'DCE6F1' : 'EBF2FA';
 
     const dataRow = ws.getRow(dataRowNum);
-    dataRow.height = 25;
+    dataRow.height = 40;
     rowData.forEach((val, ci) => {
       const cell = dataRow.getCell(ci+1);
       cell.value = val;
@@ -3604,18 +3653,18 @@ async function exportarExcelUnico() {
   const gTot = grandTotal ? (parseFloat(grandTotal.textContent)||0) : 0;
 
   const totRow = ws.getRow(dataRowNum);
-  totRow.height = 18;
+  totRow.height = 22;
   // rowData layout: 21 cols de datos + 12 meses (22-33) + 1 total (34) = 34 cols
   // Col 21 = STATUS → fila total: "TOTAL UNIDADES POR MES →"
   // Cols 22-33 = valores de meses (en el mismo orden dinámico de MESES_K)
   // Col 34 = GRAN TOTAL
-  for (let c=1; c<=34; c++) {
+  for (let c=1; c<=35; c++) {
     const cell = totRow.getCell(c);
-    if (c === 21) {
+    if (c === 22) {
       cell.value = 'TOTAL UNIDADES →';
-    } else if (c >= 22 && c <= 33) {
-      cell.value = totVals[c-22];
-    } else if (c === 34) {
+    } else if (c >= 23 && c <= 34) {
+      cell.value = totVals[c-23];
+    } else if (c === 35) {
       cell.value = gTot;
     } else {
       cell.value = '';
