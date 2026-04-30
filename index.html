@@ -3352,7 +3352,8 @@ async function exportarExcelUnico() {
   // ── Colores del tema (tema7 = accent5 = #4BACC6) ──
   const COLOR_HEADER  = '4BACC6';  // azul principal
   const COLOR_ROW2A   = '4BACC6';  // subgrupos fila 2
-  const COLOR_HDR3    = '1F497D';  // cabecera fila 3 (dk2)
+  const COLOR_HDR4    = '083d6f';  // cabecera fila 3 (dk2)
+  const COLOR_HDR3    = '4b6492';  // cabecera fila 3 (dk2) 
   const COLOR_WHITE   = 'FFFFFF';
   const COLOR_DATA_BG = 'EBF2FA';  // fondo datos alternado claro
 
@@ -3418,9 +3419,7 @@ async function exportarExcelUnico() {
   //   F.INICIO, F.FIN, PPFF, COD SISMED, CÁNCER, DOCUMENTO, INDICACIÓN, STATUS,
   //   ENE-DIC (12), TOTAL
   const colWidths = [
-    6.8,  10,   37,   11,   32,  10,  8,   10,  10,  14,  8,   32,  23,  10,  12,  12,
-    30,   10,   20,   35,   70,  18,
-    5.8, 5.8, 5.8, 5.8, 5.8, 5.8, 5.8, 5.8, 5.8, 5.8, 5.8, 5.8,
+      6.8,   10,  37,  11,  70, 32, 10,  18,  90,  36,  8,   8,   16,  13,  10,   8,   12,  24,  40,  14,  16,  16,  5.8, 5.8, 5.8, 5.8, 5.8, 5.8, 5.8, 5.8, 5.8, 5.8, 5.8, 5.8, 5.8,
     7
   ];
   colWidths.forEach((w,i) => { ws.getColumn(i+1).width = w; });
@@ -3469,7 +3468,7 @@ async function exportarExcelUnico() {
     bold: true, sz: 14, halign:'center', valign:'middle',
     border: 'all'
   });
-  for (let c=1; c<=35; c++) {
+  for (let c=1; c<=34; c++) {
     ws.getRow(1).getCell(c).border = allBorders;
   }
 
@@ -3482,13 +3481,13 @@ async function exportarExcelUnico() {
   ws.getRow(2).height = 33;
 
   const subheaders = [
-    ['A2','C2',   'DATOS IPRES',                                                      COLOR_HDR3],
-    ['D2','D2',   'FECHA REGISTRO',                                                   COLOR_HDR3],
-    ['E2','F2',   'DATOS DEL MEDICO',                                                 COLOR_HDR3],
-    ['G2','P2',   'DATOS DEL PACIENTE',                                               COLOR_HDR3],
-    ['Q2','U2',   'PPFF NO PNUME / ETS — MEDICAMENTOS E INDICACIONES POR REGISTRO',  COLOR_ROW2A],
-    ['V2','V2',   'STATUS PACIENTE',                                                  COLOR_ROW2A],
-    ['W2','AI2',  'PERIODO',                                                          COLOR_ROW2A],
+    ['A2','B2',   '   ',                                                               COLOR_HDR4],
+    ['C2','E2',   'ESTABLECIMIENTO',                                                   COLOR_HDR4],
+    ['F2','I2',   'PRODUCTO FARMACEUTICO',                                             COLOR_HDR4],
+    ['J2','K2',   'MÉDICO TRATANTE',                                                   COLOR_HDR4],
+    ['L2','Q2',   'PACIENTE',                                                          COLOR_HDR4],
+    ['R2','AI2',   'TRATAMIENTO',                                                      COLOR_HDR4],
+    //['W2','AI2',  'PERIODO',                                                          COLOR_ROW2A],
   ];
   subheaders.forEach(([from, to, text, bg]) => {
     ws.mergeCells(`${from}:${to}`);
@@ -3511,12 +3510,11 @@ async function exportarExcelUnico() {
   // ══════════════════════════════════════
   ws.getRow(3).height = 45;
   const headers3 = [
-    'N°','CODIGO RENIPRES',' NOMBRE IPRESS','FECHA','APELLIDOS Y NOMBRES','CMP / RNE','INICIALES PACIENTE',
-    'GÉNERO','FINANCIADOR','FECHA NACIMIENTO','EDAD',
+    'N°','FECHA', 'NOMBRE IPRESS','CODIGO RENIPRES','TRATAMIENTO QUE OFERTA','PPFF NO PNUME / ETS', 'COD. SISMED', 'TIPO DE CÁNCER','INDICACIÓN DE USO', 'APELLIDOS Y NOMBRES','CMP / RNE','INICIALES PACIENTE',
+    'GÉNERO','FINANCIADOR','FECHA NACIMIENTO','EDAD','STATUS DEL PACIENTE',
     'ESQUEMA TRATAMIENTO (DOSIS/FRECUENCIA)','OBJETIVO TERAPÉUTICO',
     'CICLOS / CURSOS SOLICITADOS','FECHA INICIO','FECHA FIN',
-    'PPFF NO PNUME / ETS','COD. SISMED','TIPO DE CÁNCER',
-    'DOCUMENTO DE REFERENCIA','INDICACIÓN DE USO','STATUS DEL PACIENTE',
+      //'DOCUMENTO DE REFERENCIA',
     ...MESES_L, 'TOTAL'
   ];
   headers3.forEach((h, i) => {
@@ -3573,8 +3571,8 @@ async function exportarExcelUnico() {
     const fIni     = gv(tr.querySelector('input.inp-fini'));
     const fFin     = gv(tr.querySelector('input.inp-ffin'));
     const status   = gvs(tr.querySelector('select.sel-status'));
-
-    const pCard = ppffMap[String(rowId)] || {};
+    const pCard    = ppffMap[String(rowId)] || {};
+    const tratamiento = pCard.tratamiento||enc_trat||'';
     const ppffVal  = (pCard.cod?'['+pCard.cod+'] ':'')+( pCard.ppff||'');
     const codVal   = pCard.cod||'';
     const cancerV  = pCard.cancer||enc_cancer||'';
@@ -3596,9 +3594,14 @@ async function exportarExcelUnico() {
     // 23-34:ENE…DIC  35:TOTAL
     const rowData = [
       idx+1,              // 1  N°
-      enc_cod_ipress,     // 2  CODIGO RENIPRES
-      enc_nombre_ipress,  // 3  NOMBRE IPRESS
       pCard.fecha||_fechaStr, // 4  FECHA REGISTRO
+      enc_nombre_ipress,  // 3  NOMBRE IPRESS
+      enc_cod_ipress,     // 2  CODIGO RENIPRES
+      tratamiento,
+      ppffVal,            // 17 PPFF NO PNUME / ETS
+      codVal,             // 18 COD. SISMED
+      cancerV,            // 19 TIPO DE CÁNCER
+      indV,               // 21 INDICACIÓN DE USO
       nombre,             // 5  APELLIDOS Y NOMBRES MÉDICO
       cmp,                // 6  CMP / RNE
       inic,               // 7  INICIALES PACIENTE
@@ -3606,17 +3609,12 @@ async function exportarExcelUnico() {
       'SIS',              // 9  FINANCIADOR
       fechaNac,           // 10 FECHA NACIMIENTO
       edad,               // 11 EDAD
+      status,             // 22 STATUS DEL PACIENTE    
       esquema,            // 12 ESQUEMA TRATAMIENTO (DOSIS/FRECUENCIA)
       objetivo,           // 13 OBJETIVO TERAPÉUTICO
       ciclos,             // 14 CICLOS / CURSOS SOLICITADOS
       fIni,               // 15 FECHA INICIO
       fFin,               // 16 FECHA FIN
-      ppffVal,            // 17 PPFF NO PNUME / ETS
-      codVal,             // 18 COD. SISMED
-      cancerV,            // 19 TIPO DE CÁNCER
-      docV,               // 20 DOCUMENTO DE REFERENCIA
-      indV,               // 21 INDICACIÓN DE USO
-      status,             // 22 STATUS DEL PACIENTE
       ...mesesVals,       // 23-34 ENE…DIC
       total               // 35 TOTAL
     ];
@@ -3629,7 +3627,7 @@ async function exportarExcelUnico() {
     rowData.forEach((val, ci) => {
       const cell = dataRow.getCell(ci+1);
       cell.value = val;
-      const isNum = (ci >= 22 && ci <= 34);  // meses + total (cols 23-35, ci 0-indexed = 22-34)
+      const isNum = (ci >= 23 && ci <= 35);  // meses + total (cols 23-35, ci 0-indexed = 22-34)
       styleCell(cell, {
         bgColor: bgData, fontColor: '1F3864',
         sz: 10, halign: isNum ? 'center' : (ci===0?'center':'left'),
@@ -3653,7 +3651,7 @@ async function exportarExcelUnico() {
   const gTot = grandTotal ? (parseFloat(grandTotal.textContent)||0) : 0;
 
   const totRow = ws.getRow(dataRowNum);
-  totRow.height = 22;
+  totRow.height = 23;
   // rowData layout: 21 cols de datos + 12 meses (22-33) + 1 total (34) = 34 cols
   // Col 21 = STATUS → fila total: "TOTAL UNIDADES POR MES →"
   // Cols 22-33 = valores de meses (en el mismo orden dinámico de MESES_K)
@@ -3662,7 +3660,7 @@ async function exportarExcelUnico() {
     const cell = totRow.getCell(c);
     if (c === 22) {
       cell.value = 'TOTAL UNIDADES →';
-    } else if (c >= 23 && c <= 34) {
+    } else if (c >= 22 && c <= 35) {
       cell.value = totVals[c-23];
     } else if (c === 35) {
       cell.value = gTot;
@@ -3671,7 +3669,7 @@ async function exportarExcelUnico() {
     }
     styleCell(cell, {
       bgColor: COLOR_HDR3, fontColor: COLOR_WHITE,
-      bold: true, sz: 10, halign: c === 21 ? 'right' : 'center', valign:'middle',
+      bold: true, sz: 8, halign: c === 21 ? 'right' : 'center', valign:'middle',
       border:'all'
     });
   }
